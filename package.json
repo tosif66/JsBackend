@@ -1,0 +1,17 @@
+{
+  "name": "fullbackend",
+  "version": "1.0.0",
+  "description": "A full backend mastery",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [
+    "Backend",
+    "Javascript",
+    "Models"
+  ],
+  "author": "Tosif Ansari",
+  "license": "ISC"
+}
