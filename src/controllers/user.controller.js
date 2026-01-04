@@ -1,8 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandlers.js";
-import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinay.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { ApiError } from "../utils/ApiError.js";
 
 // this method does- get usedId then find user by id 
 // then generate accessToke and refreshToken
@@ -22,6 +22,7 @@ const generateAccessAndRefreshTokens = async (userId) => {
         return { accessToken, refreshToken }
 
     } catch (error) {
+        console.log(error)
         throw new ApiError(500, "Something went wrong while generating access and refresh tokens")
     }
 }
@@ -136,39 +137,46 @@ const loginUser = asyncHandler(async (req, res) => {
     // send it to cookies
 
     // getting data from user
-    const { username, email, password } = req.body
-
-    if (!(username || email)) {
-        throw new ApiError(400, "username or email is required")
+    const { email, password } = req.body
+    
+    
+    if (!email) {
+        console.log("username or email required");
+        throw new ApiError(400, " email is required")
+        
     }
 
     // finding user in db
-    const user = await User.findOne({
-        $or: [{ email }, { username }]
-    })
+    
+    const user = await User.findOne({email})
 
     if (!user) {
-        throw new ApiError(400, "user does not exist")
+        console.log("user not found");
+        throw new ApiError(400, "User does not exist")
+        
     }
     // checking password us valid or not
 
     const isPasswordValid = await user.isPasswordCorrect(password)
 
     if (!isPasswordValid) {
+        console.log("password is invalid")
         throw new ApiError(401, "password is invalid")
     }
 
     // generate access and refreshToken
     const { accessToken, refreshToken } = await 
-    generateAccessAndRefreshTokens(user._id)
+    generateAccessAndRefreshTokens(user?._id)
 
 
     const loggedInUser = await User.findById(user._id).
     select("-password -refreshToken")
 
+    console.log(loggedInUser)
+
     const options = {
         httpOnly: true,
-        secure: true
+        secure: false
     }
     
     // setting cookies 
@@ -189,10 +197,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const logoutUser = asyncHandler(async(req,res) => {
     // getting user from middlware jwtverify
-    await User.findByIdAndUpdate(req.user._id,
+    await User.findByIdAndUpdate(req.user?._id,
         {
-            $set: {
-                refreshToken : undefined
+            $unset: {
+                refreshToken : 1
             }
         },
         {
