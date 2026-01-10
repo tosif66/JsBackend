@@ -5,7 +5,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     //TODO: create playlist
 })
 
-const getUserPlaylist = asyncHandler(async (req,res) => {
+const getUserPlaylists = asyncHandler(async (req,res) => {
     const {userId} = req.params
     //TODO: get user playlists
 })
@@ -39,7 +39,7 @@ const updatePlaylist = asyncHandler(async(async (req,res) => {
 
 export {
     createPlaylist,
-    getUserPlaylist,
+    getUserPlaylists,
     getPlaylistById,
     addVideoToPlaylist,
     removeVideoFromPlaylist,
