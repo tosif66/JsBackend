@@ -8,9 +8,9 @@ import {
     logoutUser, 
     refreshAccessToken, 
     registerUser, 
-    updateAccoundDetails, 
     updateUserAvatar, 
-    updateUserCoverImage
+    updateUserCoverImage,
+    updateUserDetails
     }
  from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
@@ -40,7 +40,7 @@ router.route("/change-password").post(verifyJWT, changeCurrentPassword)
 
 router.route("/current-user").get(verifyJWT, getCurrentUser)
 
-router.route("/update-account").patch(verifyJWT, updateAccoundDetails)
+router.route("/update-account").patch(verifyJWT, updateUserDetails)
 
 router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
 
