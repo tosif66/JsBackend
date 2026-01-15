@@ -43,7 +43,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     const response = {
         videos,
-        total: video.length,
+        total: videos.length,
         page,
         limit,
 
@@ -74,16 +74,16 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
     const videoFile = await uploadOnCloudinary(videoLocalPath)
 
-    
+
     const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
-    
+
 
     if (!videoFile) {
-        throw new ApiError(400, "Something went wrong while uploading video on cloudinary")
+        throw new ApiError(500, "Something went wrong while uploading video on cloudinary")
     }
 
     if (!thumbnail) {
-        throw new ApiError(400, "Something went wrong while uploading thumbnail on cloudinary")
+        throw new ApiError(500, "Something went wrong while uploading thumbnail on cloudinary")
     }
 
     const video = await Video.create({
@@ -125,25 +125,32 @@ const updateVideo = asyncHandler(async (req, res) => {
 
     const { title, description } = req.body
 
-    if (!title && !description) {
-        throw new ApiError(400, "Title and Description are required")
+    if (!title && !description && !req.file) {
+        throw new ApiError(400, "Provide title, description or thumbnail to update")
     }
 
+    let thumbnailUrl
 
-    const thumbnailLocalPath = req.file?.thumbnail[0]?.path
+    if (req.file) {
+        const thumbnail = await uploadOnCloudinary(req.file?.path)
 
-    const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+        if (!thumbnail) {
+            throw new ApiError(500, "something went wrong while updating thumbnail")
+        }
+        thumbnailUrl = thumbnail.secure_url
+    }
 
 
     const video = await Video.findByIdAndUpdate(
         videoId,
         {
             $set: {
-                title,
-                description,
-                thumbnail
+                ...(title && { title }),
+                ...(description && { description }),
+                ...(thumbnailUrl && { thumbnailUrl })
             }
-        }
+        },
+        { new: true }
     )
 
     if (!video) {
