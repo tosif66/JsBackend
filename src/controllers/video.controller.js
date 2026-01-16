@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandlers.js"
-import { uploadOnCloudinary } from "../utils/cloudinay.js"
+import { deleteOnCloudinary, uploadOnCloudinary } from "../utils/cloudinay.js"
 
 
 
@@ -72,24 +72,32 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path
 
 
-    const videoFile = await uploadOnCloudinary(videoLocalPath)
+    const uploadedVideo = await uploadOnCloudinary(videoLocalPath)
 
 
-    const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+    const uploadedThumb = await uploadOnCloudinary(thumbnailLocalPath)
 
 
-    if (!videoFile) {
+    if (!uploadedVideo) {
         throw new ApiError(500, "Something went wrong while uploading video on cloudinary")
     }
 
-    if (!thumbnail) {
+    if (!uploadedThumb) {
         throw new ApiError(500, "Something went wrong while uploading thumbnail on cloudinary")
     }
 
+
+
     const video = await Video.create({
-        videoFile: videoFile.url,
-        thumbnail: thumbnail.url,
-        duration: videoFile.duration,
+        videoFile: {
+            url: uploadedVideo.secure_url,
+            public_id: uploadedVideo.public_id
+        },
+        thumbnail: {
+            url: uploadedThumb.secure_url,
+            public_id: uploadedThumb.public_id
+        },
+        duration: uploadedVideo.duration,
         title,
         description,
         views: 0,
@@ -129,7 +137,13 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Provide title, description or thumbnail to update")
     }
 
-    let thumbnailUrl
+    const video = await Video.findById(videoId)
+
+    if (!video) {
+        throw new ApiError(400, "video not found")
+    }
+
+    let newThumbnail;
 
     if (req.file) {
         const thumbnail = await uploadOnCloudinary(req.file?.path)
@@ -137,25 +151,21 @@ const updateVideo = asyncHandler(async (req, res) => {
         if (!thumbnail) {
             throw new ApiError(500, "something went wrong while updating thumbnail")
         }
-        thumbnailUrl = thumbnail.secure_url
+        newThumbnail = {
+            url: thumbnail.secure_url,
+            public_id: thumbnail.public_id
+        }
+
+        if(video.thumbnail?.public_id){
+            await deleteOnCloudinary(video.thumbnail.public_id, "image") 
+        }
     }
 
+    if(title) video.title = title
+    if(description) video.description = description
+    if(newThumbnail) video.thumbnail = newThumbnail
 
-    const video = await Video.findByIdAndUpdate(
-        videoId,
-        {
-            $set: {
-                ...(title && { title }),
-                ...(description && { description }),
-                ...(thumbnailUrl && { thumbnailUrl })
-            }
-        },
-        { new: true }
-    )
-
-    if (!video) {
-        throw new ApiError(400, "video not found")
-    }
+    await video.save()
 
     return res.status(200)
         .json(new ApiResponse(200, video, "Video updated successfully"))
