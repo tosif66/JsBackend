@@ -102,7 +102,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         description,
         views: 0,
         owner: req.user?._id,
-        isVideoPublished: true
+        isPublished: true
+
     })
 
 
@@ -156,14 +157,14 @@ const updateVideo = asyncHandler(async (req, res) => {
             public_id: thumbnail.public_id
         }
 
-        if(video.thumbnail?.public_id){
-            await deleteOnCloudinary(video.thumbnail.public_id, "image") 
+        if (video.thumbnail?.public_id) {
+            await deleteOnCloudinary(video.thumbnail.public_id, "image")
         }
     }
 
-    if(title) video.title = title
-    if(description) video.description = description
-    if(newThumbnail) video.thumbnail = newThumbnail
+    if (title) video.title = title
+    if (description) video.description = description
+    if (newThumbnail) video.thumbnail = newThumbnail
 
     await video.save()
 
@@ -182,6 +183,8 @@ const deleteVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "video not found")
     }
 
+    await deleteOnCloudinary(video.videoFile?.public_id, "video")
+
     return res
         .status(200)
         .json(new ApiResponse(200, {}, "Video deleted successfully"))
@@ -196,7 +199,9 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         throw new ApiError(400, " video not found ")
     }
 
-    const toggled = video.isVideoPublished ? false : true
+    video.isPublished = !video.isPublished
+    const toggled = video.isPublished
+    await video.save()
 
     return res.status(200)
         .json(new ApiResponse(200, toggled, "video publish toggled successfully "))
