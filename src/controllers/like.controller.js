@@ -12,6 +12,11 @@ import { Tweet } from "../models/tweet.model.js";
 const toggleVideoLike = asyncHandler(async (req, res) => {
     // data coming from url
     const { videoId } = req.params
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(401, "Invalid videoId found")
+    }
+
     const userId = req.user?._id
     //TODO: toggle like on video
     const video = await Video.findById(videoId)
@@ -41,6 +46,11 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const { commentId } = req.params
+
+    if(!isValidObjectId(commentId)){
+        throw new ApiError(401, "Invalid commentId found")
+    }
+
     //TODO: toggle like on comment
     const userId = req.user?._id
 
@@ -68,6 +78,11 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 const toggleTweetLike = asyncHandler(async (req, res) => {
     const { tweetId } = req.params
+
+    if(!isValidObjectId(tweetId)){
+        throw new ApiError(401, "Invalid tweetId found")
+    }
+
     //TODO: toggle like on tweet
     const userId = req.user?._id
 
@@ -119,4 +134,4 @@ export {
     toggleCommentLike,
     toggleTweetLike,
     getLikedVideos
-}
+}                             
